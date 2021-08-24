@@ -14,9 +14,9 @@ class FS:
 
     def open_file(self, path):
         try:
-            if path not in self._filem_anager:
+            if path not in self._file_manager:
                 _file = open(path, 'r')
-                self._filem_anager[path] = _file
+                self._file_manager[path] = _file
             return True
         except Exception as e:
             print('ERROR!!! ', e)
@@ -24,9 +24,9 @@ class FS:
 
     def close_file(self, path):
         try:
-            if path in self._filem_anager:
-                self._filem_anager[path].close()
-                del self._filem_anager[path]
+            if path in self._file_manager:
+                self._file_manager[path].close()
+                del self._file_manager[path]
             return True
         except Exception as e:
             print('ERROR!!! ', e)
@@ -35,8 +35,8 @@ class FS:
     def read_file(self, path):
         try:
             if self.open_file(path):
-                if path in self._filem_anager:
-                    data = self._filem_anager[path].read()
+                if path in self._file_manager:
+                    data = self._file_manager[path].read()
                 self.close_file(path)
             return data
         except Exception as e:
