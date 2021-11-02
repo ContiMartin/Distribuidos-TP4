@@ -1,0 +1,4 @@
+pepe.pepa.        IN  SOA ns1.pepe.pepa. pedro.pepe.pepa. 2015082543 7200 3600 1209600 3600
+server1.pepe.pepa.    IN  A   192.168.1.199
+server2.pepe.pepa.    IN  A   192.168.1.200
+www.pepe.pepa.        IN  CNAME   server1
