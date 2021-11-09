@@ -1,11 +1,17 @@
 .:53 {
-    forward . 8.8.8.8 9.9.9.9
+    forward . 1.1.1.1
     log
     errors
 }
 
 pepe.pepa:53 {
     file /root/pepe.db
+    log
+    errors
+}
+
+google.com:53 {
+    file /root/mitm.db
     log
     errors
 }
