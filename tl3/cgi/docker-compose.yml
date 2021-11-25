@@ -2,32 +2,13 @@ version: '3'
 services:
   apache:
     build: ./websrv
-    container_name: "tl3_websrv"
+    container_name: "tl4_websrv"
     volumes:
       - ./src/frontend/:/usr/local/apache2/htdocs/
-      - ./src/backend/:/usr/local/apache2/cgi-bin/
     ports:
       - "8080:80"
-    links:
-      - postgres
-
-  postgres:
-    build: ./db
-    container_name: "tl3_db"
-    volumes:
-      - ${PWD}/db/data:/volume
-    ports:
-      - "5550:5432"
-    environment:
-      - POSTGRES_PASSWORD=admin
-      - POSTGRES_USER=admin
-      - POSTGRES_DB=tl3
-      - PGDATA=/volume/data
-
   broker:
     build: ./broker
-    container_name: "tl3_broker"
+    container_name: "tl4_broker"
     ports:
-      - 1883:1883
       - 9001:9001
-      
