@@ -14,128 +14,90 @@
 
     <!-- estilos del chat del TL4 2021-->
     <link rel="stylesheet" href='/statics/estilos-chat.css'>
-
     
-    
-    <script type="text/javascript" languaje="javascript">        
-    
+    <script type="text/javascript" languaje="javascript">
         var usuarios = "";
         var clienteId = "";
         var usuarios_activos = "";
-
-
-
-
-        function login(username, host,port){
-                clienteId = username;
-                usuarios_activos = clienteId+"-";
-                client = new Paho.MQTT.Client(host, Number(port), clienteId);
-                client.onConnectionLost = onConnectionLost;
-                client.onMessageArrived = onMessageArrived;
-                client.connect({onSuccess:onConnect});
-            }
-
-
-
-
-        function onConnect() {                                    
-            console.log('mqtt conectado......');
-            client.subscribe('#');
-            client.subscribe("chat_general");
-            client.subscribe("usuarios_activos");
-            
-            client.subscribe(clienteId+"/notificaciones")
-                setTimeout(function(){
-                    refrescarEnVivo();
-                },1000);
-
-        }
-
-
-
-
-        function refrescarEnVivo(){
-                message = new Paho.MQTT.Message(usuarios_activos);
-                message.retained = true;
-                message.destinationName = "usuarios_activos";
-                client.send(message);
-            }
-
-
-
 
         function onMessageArrived(message) {
             console.log("onMessageArrived: " + message.payloadString);
             $("publicado").val(message.payloadString);
         }
 
-
-
-
+// TENGO QUE FILTRAR LOS MENSAJES DE ALGUNA MANERA 
         function message_handler(message){
             console.log(message.destinationName + message.payloadString);
             if (message.destinationName == '/messages'){
+                console.log(message.payloadString)
                 var msgs = $('#messages').html();
                 var msg = JSON.parse(message.payloadString);
                 msgs = msgs +'\n' + msg.user + ': ' + msg.message;
                 $('#messages').html(msgs);
             }
-            if (message.destinationName == '/users/new'){
-                var msg = JSON.parse(message.payloadString);
-                usuarios = usuarios + ', '+ msg.user;
-                
-
-
-                var msgs = $('#usuarios').html();                
-
-                var msg = JSON.parse(message.payloadString);
-                current_users = $("#mqtt_msg").val();
-                $("#mqtt_msg").val($("#mqtt_msg").val()+","+msg.user);
-                usuarios = usuarios + ', ' + msg.user;
-                $('#users_tbody').append(new_tr);
-
-                msgs = msgs +'\n' + msg.user + ': ' + msg.message;
-                $('#messages').html(msgs);
-                
-
-            }
             
-            if (message.destinationName == '/users'){                
+            if (message.destinationName == '/users'){
+                console.log(message.payloadString)
                 usuarios = message.payloadString;
-            
-            
-                var msgs = $('#usuarios').html();                
+                console.log("ESTOY EN USUARIOS")
+                console.log(usuarios)
+                             
+                let arr =  JSON.parse(usuarios); 
 
-                var msg = JSON.parse(message.payloadString);
-                current_users = $("#mqtt_msg").val();
-                $("#mqtt_msg").val($("#mqtt_msg").val()+","+msg.user);
-                usuarios = usuarios + ', ' + msg.user;
-                $('#users_tbody').append(new_tr);
+                console.log(arr)
+                console.dir(arr) 
+                console.log(typeof arr)
+             
+                console.log(arr);
+                    for (row in arr){
+                        console.log(row) 
 
-                msgs = msgs +'\n' + msg.user + ': ' + msg.message;
-                $('#messages').html(msgs);
-            
-            
+                        let ar = arr[row];
+                        console.log(row);
+                        console.log(ar);
+                        new_tr = '<tr><button type="button" class="btn btn-info"><th scope="row">'+ ar + '</button></th>';
+                        new_tr += '<td><button id="modificar" type="button" class="btn btn-primary btn-block" data-toggle="modal" data-target="#seguir">Seguir</button></td></tr>';
+
+                        $('#usersList').append(new_tr);
+                    }
+
+                //var msgs = $('#messages').html();
+                //var msg = JSON.parse(message.payloadString);
+                //msgs = msgs +'\n' + msg.user + ': ' + msg.message;
+                //$('#messages').html(msgs);
+
+
+                //current_users = $("#mqtt_msg").val();
+                //$("#mqtt_msg").val($("#mqtt_msg").val()+","+msg.user);
+                
+                //usuarios = usuarios + ', ' + msg.user;
+                //$('#users_tbody').append(new_tr);
+
+                // msgs = msgs +'\n' + msg.user + ': ' + msg.message;
+                // $('#messages').html(msgs);
             }
         }
 
         function mqtt_setup(){
-
+            console.log("mqtt_setup")
             var wsbroker = "127.0.0.1";
             var wsport = 9001
 
             var client = new Paho.MQTT.Client(wsbroker, wsport,
-                "myclientid_" + parseInt(Math.random() * 100, 10));
+               "ClientID_" + parseInt(Math.random() * 100, 10));
 
             client.onConnectionLost = function (responseObject) {
-                console.log("connection lost: " + responseObject.errorMessage);
-                message = new Paho.MQTT.Message('{"user": "yo"');
-                    message.destinationName = "/users/destroy";
-                    client.send(message);
+               console.log("connection lost: " + responseObject.errorMessage);
+               message = new Paho.MQTT.Message('{"user": "yo"');
+                   message.destinationName = "/users/destroy";
+                   client.send(message);
             };
 
-            client.onMessageArrived = function (message) {
-                message_handler(message);                        
+            client.onMessageArrived = function (message){
+                console.log("antes del handler");
+                message_handler(message);
+                console.log("despues del handler");
+
             };
 
             var options = {
@@ -144,68 +106,62 @@
                 cleanSession: true,
                 userName: '',
                 password: '',
-
+  
                 onSuccess: function () {
                     console.log("mqtt connected");
                     client.subscribe('/#', {qos: 1});
-                    // client.subscribe('/messages', {qos: 1});
-
-                    message = new Paho.MQTT.Message("Hello");
-                    message.destinationName = "/World";
-                    client.send(message);
+                    
+                    // ENVIAR MENSAJE
+                    // message = new Paho.MQTT.Message("Hola soy un nuevo mensaje");
+                    // message.destinationName = "/#";
+                    // client.send(message);
             
                 },
-                onFailure: function (message) {
+                onFailure: function (message){
                     console.log("Connection failed: " + message.errorMessage);
                     console.log(message);
                 }
             };
-
             client.connect(options);
-
             return client;
         }
 
-
-
-
-        $(document).ready(function(){   
+        $(document).ready(function(){
          
             mqtt_client = mqtt_setup();
                    
-
             $('#send_mqtt_msg').on('click', function(){
-                
                 
                 msg = $('#mqtt_msg_sent').val();
                 msg = $('#mqtt_msg').val()+','+"yo";
                 message = new Paho.MQTT.Message(msg);
-                
-                
 
-               usuarios = usuarios + ',' + $('#mqtt_msg_sent').val();
-               message = new Paho.MQTT.Message(usuarios);
-               message.destinationName = "/users";
-               client.send(message);
+                usuarios = usuarios + ',' + $('#mqtt_msg_sent').val();
+               
+                message = new Paho.MQTT.Message(usuarios);
+                message.destinationName = "/users";
+                client.send(message);
             });
 
+            $("#form_login").on("submit", function(){
+                $('#ventana-login').hide();
+                $('#ventana-index').show();
+                username = $('#username').val();
+                
+                $("#userNAME").append(`<li>${username}</li>`)
+
+                console.log("IMPRIMIR USUARIO")
+                console.log(username)
+
+                clienteId = username;
+                usuarios_activos = clienteId+"-";
+
+                return false;
+            });
         });
 
-        $("#form_login").on("submit", function(){
-                $('.ventana-login').toggle();
-                $('.ventana-index').toggle();
-                username = $('#username').val();
-                host = $('#host').val();
-                port = $('#port').val();  
-                login(username, host, port);
-                return false;
-            })
     </script>
 </head>
-
-
-
-
 
 <html>
 <body>    
@@ -217,47 +173,60 @@
             Distribuidos - Conti 2021
         </a>
     </nav>
-
-
-
-        <div class = "ventana-login">
+    <ul></ul>
+    <ul></ul>
+    <div class = "ventana-login" id="ventana-login">
             <body style='background-color: #f5f5f5'>
                 <div class='login-form'>
                     <h2>Complete para Ingresar</h2>
+                    <h2>a la mini red Social</h2>
                     <form id="form_login" method='POST'>
                         <div class='text-center'>
-                            <i class='fa fa-user' style='font-size:100px;' aria-hidden='true'></i>
+                            <i class='fa fa-user' style='font-size:80px;' aria-hidden='true'></i>
                         </div>
                         <br>
                         <div class='form-group'>
-                            <input type='text' class='form-control' name='username' id='username' maxlength='70' pattern='^[A-Za-z0-9]*' placeholder='Nombre de usuario' required>
-                            <br>
-                            <input type='text' class='form-control' name='host' id='host' value="localhost" placeholder='Elija un host)'>
-                            <br>
-                            <input type='text' class='form-control' name='port' id='port' value="1884" placeholder='Elija un puerto'>
+                            <input type='text' class='form-control' name='username' id='username' maxlength='70' pattern='^[A-Za-z0-9]*' placeholder='Ingrese Nick' required>
                         </div>
                         <br>
                         <div class='form-group'>
-                            <button type='submit' class='btn btn-primary btn-block'>Ingresar</button>
+                            <button type='submit' id="botonIngresar" class='btn btn-primary btn-block' onclick="$('#addUser').submit();" >Ingresar</button>
                         </div>
                     </form>
                 </div>
             </body>
         </div>
 
+        <ul></ul>
+        <ul></ul>
 
-
-
-
-        <div class="ventana-index" style="display: none;">
-            
+        <div class="ventana-index" id="ventana-index" style="display: none;">
             <div class="row">
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <div class="list-group banner-usuarios" id="list-tab" role="tablist">
-                        <a class="list-group-item list-group-item-action active" data-toggle="list" href="#chat_general" role="tab" aria-controls="home">Chat General</a>
+                        <a class="list-group-item list-group-item-action active" data-toggle="list" href="#chat_general" role="tab" aria-controls="home">General</a>
+                        <div class="content">
+
+                            <ul></ul>
+                            <ul></ul>
+                    
+                            <table class="table">
+                                <thead class="bg-warning">
+                                    <tr>
+                                        <th scope="col" colspan="6"><i class='fa fa-user' style='font-size:24px;' aria-hidden='true'></i>
+                                            Usuario: <ul id="userNAME"></ul>
+                                        </th>
+                                    </tr>
+                                    <tr>
+                                        <th scope="col">Otros Usuarios <ul id="usersList"></ul></th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-9">
+                
+                <div class="col-md-6">
                     
                     <div class="tab-content" id="nav-tabContent">
                         <div class="tab-pane fade show active" id="_chat_general">
@@ -266,108 +235,41 @@
                                 </div>
                                 <div class="type_msg">
                                     <div class="input_msg_write">
-                                        <input id="chat_general" type="text" class="write_msg" placeholder="Type a message"/>
-                                        <button class="msg_send_btn" type="button" onclick="true"><i class="fa fa-paper-plane-o" aria-hidden="true"></i></button>
+                                        <input id="chat_general" type="text" class="write_msg" placeholder="Message"/>
+                                        <div class="col-md-4">
+                                            <button type='button' class='btn btn-primary btn-block' onclick="true"><i aria-hidden="true">Enviar</i></button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <div class="col-md-3">
+                    <div class="list-group banner-usuarios" id="list-tab" role="tablist">
+                        <a class="list-group-item list-group-item-action active" data-toggle="list" href="#chat_general" role="tab" aria-controls="home">Usuarios que sigo</a>
+                        <div class="content">
+
+                            <ul></ul>
+                            <ul></ul>
+                    
+                            <table class="table">
+                                <thead class="bg-warning">
+                                    <tr>
+                                        <th scope="col" colspan="6"><i class='fa fa-user' style='font-size:24px;' aria-hidden='true'></i>
+                                            Usuarios: <ul id="username"></ul>
+                                        </th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
+        
+            
+        
         </div>
-
-</html>
-<!--
-
-    <br><br>
-    <div class="content">       
-        <textarea name="" id="messages" cols="70" rows="10"></textarea>
-        <br><br>
-        <input type="text" name="" id="mqtt_msg">
-        <br><br>
-        <input type="text" name="" id="mqtt_msg_sent"><input type="button" value="Boton" id="send_mqtt_msg"> <br><br>
-        <ul id="usuarios">
-
-        </ul>
-    </div>
-
-
-
-
-
-    <br><br>
-    <div class="content">
-        <table class="table">
-            <thead class="bg-warning">
-                <tr>
-                    <th scope="col" colspan="5">Usuarios</th>
-                </tr>
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Nombre</th>
-                    <th scope="col">Edad</th>
-                    <th scope="col">Usuario</th>
-                    <th scope="col">Password</th>
-                </tr>
-            </thead>
-            <tbody id="users_tbody">
-                
-            </tbody>
-            <tfoot>
-                <tr class="bg-warning">                    
-                    <td colspan="5" class="align-a-derecha">
-                        <button id="toggle_modal" type="button" class="btn btn-dark" data-toggle="modal" data-target="#exampleModal">
-                            Agregar
-                        </button>
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
-    
-
-     Modal 
-    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body"> 
-            <form id="new_user" action="/cgi-bin/users.py" method="post">
-                <div class="form-group">
-                    <label for="name">Nombre</label>
-                    <input type="text" class="form-control" id="name" name="name" aria-describedby="emailHelp" placeholder="Nombre">
-                </div>
-                <div class="form-group">
-                    <label for="age">Edad</label>
-                    <input type="text" class="form-control" id="age" name="age" placeholder="Edad">
-                </div>
-                <div class="form-group">
-                    <label for="username">Usuario</label>
-                    <input type="text" class="form-control" id="username" name="username" aria-describedby="Usuario" placeholder="Usuario">
-                </div>
-                <div class="form-group">
-                    <label for="password">Contraseña</label>
-                    <input type="password" class="form-control" id="password" name="password" placeholder="Contraseña">
-                </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn btn-success" onclick="$('#new_user').submit();">Guardar</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-    -->
-
-</body>
-
+</body>    
 </html>
